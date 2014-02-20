@@ -79,7 +79,7 @@ z_trd_rj01:--z_trd_rj01
     from view_trd
     where datea between @t_bdate and @t_edate
     and custno between @t_bcustno and @t_ecustno
-    and (len(@t_noa)=0 or charindex(noa,','+@t_noa+',')>0)
+    and (len(@t_noa)=0 or charindex(','+noa+',',','+@t_noa+',')>0)
     open cursor_table
     fetch next from cursor_table
     into @trdaccy,@trdno,@custno,@custchgno,@vccano,@money,@tax,@plusmoney,@minusmoney,@total
@@ -221,12 +221,12 @@ z_trd_rj01:--z_trd_rj01
     ,caseno aa
     
     ,custchgdate b1
-    ,case when plus>0 then '加' when minus>0 then '減' else '' end b2
+    ,case when plus>0 then '加項' when minus>0 then '減項' else '' end b2
     ,ISNULL(plusitem,'')+ISNULL(minusitem,'') b3
     ,case when ISNULL(plus,0)+ISNULL(minus,0)!=0 then reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,ISNULL(plus,0)+ISNULL(minus,0)),1)),4,12)) else '' end b4
     
     ,vccadate c1
-    ,case when vccatax>0 then '稅'  else '' end c2
+    ,case when vccatax>0 then '稅額'  else '' end c2
     ,vccano c3
     ,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,vccatax),1)),4,12)) c4
     
