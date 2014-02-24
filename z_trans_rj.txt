@@ -1,3 +1,73 @@
+z_trans_rj06:--z_trans_rj06
+	declare @t_mon nvarchar(20) = case when '#non'=[15] then '' else [15] end
+	-------------------------------------------------------------------------------
+	declare @d1 date = cast(cast(left(@t_mon,3) as int)+1911 as nvarchar)+'/'+right(@t_mon,2)+'/25'
+	set @d1 = DATEADD(DD,10,@d1)
+	set @d1 = cast(CAST(YEAR(@d1) as nvarchar)+'/'+CAST(Month(@d1) as nvarchar)+'/01' as DATE)
+	set @d1 = DATEADD(DD,-1,@d1)
+	declare @n int = day(@d1)
+	--------------------------------------------------------------------------------
+	declare @tmpa table(
+		datea nvarchar(10),
+		product nvarchar(20),
+		unit nvarchar(20),
+		mount float
+	)		
+	insert into @tmpa
+	select a.trandate,b.product,a.unit,sum(a.mount)
+	from view_trans a
+	left join ucc b on a.uccno=b.noa
+	where left(a.trandate,6) = @t_mon
+	and (b.product='大陸砂' or b.product='粗砂' or b.product='一分石' or b.product='二分石')
+	group by a.trandate,b.product,a.unit
+	
+	declare @tmp table(
+		gno nvarchar(10),
+		pno nvarchar(10),
+		datea nvarchar(10),
+		
+		--product1 nvarchar(20),--大陸砂
+		ma1 float,--台數
+		ma2 float,--米數
+		
+		--product2 nvarchar(20),--粗砂
+		mb1 float,--台數
+		mb2 float,--米數
+		
+		--product3 nvarchar(20),--一分石
+		mc1 float,--台數
+		mc2 float,--米數
+		
+		--product4 nvarchar(20),--二分石
+		md1 float,--台數
+		md2 float,--米數
+		
+		tot1 float,--台數
+		tot2 float,--米數
+		memo nvarchar(max)
+	)
+	while @n>0
+	begin
+		insert into @tmp(gno,pno,datea)values('1',RIGHT('00'+CAST(@n as nvarchar),2),RIGHT('00'+CAST(@n as nvarchar),2))
+		set @n = @n - 1
+	end
+	update @tmp set 
+		ma1 = case when b.unit = '台數' and b.product='大陸砂' then b.mount else 0 end
+		,ma2 = case when b.unit = '米數' and b.product='大陸砂' then b.mount else 0 end
+		,mb1 = case when b.unit = '台數' and b.product='粗砂' then b.mount else 0 end
+		,mb2 = case when b.unit = '米數' and b.product='粗砂' then b.mount else 0 end
+		,mc1 = case when b.unit = '台數' and b.product='一分石' then b.mount else 0 end
+		,mc2 = case when b.unit = '米數' and b.product='一分石' then b.mount else 0 end
+		,md1 = case when b.unit = '台數' and b.product='二分石' then b.mount else 0 end
+		,md2 = case when b.unit = '米數' and b.product='二分石' then b.mount else 0 end
+	from @tmp a
+	left join @tmpa b on RIGHT(b.datea,2)=a.datea
+	update @tmp set tot1=ma1+mb1+mc1+md1,tot2=ma2+mb2+mc2+md2
+	insert into @tmp(gno,pno,ma1,ma2,mb1,mb2,mc1,mc2,md1,md2,tot1,tot2)
+	select '2','zz',SUM(ma1),SUM(ma2),SUM(mb1),SUM(mb2),SUM(mc1),SUM(mc2),SUM(md1),SUM(md2),SUM(tot1),SUM(tot2)
+	from @tmp
+	select * from @tmp order by pno;
+
 z_trans_rj05:--z_trans_rj05
 	declare @t_bdate nvarchar(10) = case when '#non'=[1] then '' else [1] end
 	declare @t_edate nvarchar(10) = case when '#non'=[2] then char(255) else [2] end
