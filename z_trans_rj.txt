@@ -1,11 +1,18 @@
 z_trans_rj06:--z_trans_rj06
 	declare @t_mon nvarchar(20) = case when '#non'=[15] then '' else [15] end
 	-------------------------------------------------------------------------------
-	declare @d1 date = cast(cast(left(@t_mon,3) as int)+1911 as nvarchar)+'/'+right(@t_mon,2)+'/25'
-	set @d1 = DATEADD(DD,10,@d1)
-	set @d1 = cast(CAST(YEAR(@d1) as nvarchar)+'/'+CAST(Month(@d1) as nvarchar)+'/01' as DATE)
-	set @d1 = DATEADD(DD,-1,@d1)
-	declare @n int = day(@d1)
+	declare @d1 date
+	declare @n int
+	begin try
+		set @d1 = cast(cast(left(@t_mon,3) as int)+1911 as nvarchar)+'/'+right(@t_mon,2)+'/25'
+		set @d1 = DATEADD(DD,10,@d1)
+		set @d1 = cast(CAST(YEAR(@d1) as nvarchar)+'/'+CAST(Month(@d1) as nvarchar)+'/01' as DATE)
+		set @d1 = DATEADD(DD,-1,@d1)
+		set @n = day(@d1)
+	end try
+	begin catch
+		--return
+	end catch
 	--------------------------------------------------------------------------------
 	declare @tmpa table(
 		datea nvarchar(10),
