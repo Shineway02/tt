@@ -17,16 +17,19 @@ z_trans_rj06:--z_trans_rj06
 	declare @tmpa table(
 		datea nvarchar(10),
 		product nvarchar(20),
-		unit nvarchar(20),
-		mount float
+		inmount float,
+		mount3 float,
+		mount4 float
 	)		
 	insert into @tmpa
-	select a.trandate,b.product,a.unit,sum(a.mount)
+	select a.trandate,b.product,sum(isnull(a.inmount,0)),sum(isnull(a.mount3,0)),sum(isnull(a.mount4,0))
 	from view_trans a
 	left join ucc b on a.uccno=b.noa
-	where left(a.trandate,6) = @t_mon
+	where a.endaddr='國順'
+	and left(a.trandate,6) = @t_mon
 	and (b.product='大陸砂' or b.product='粗砂' or b.product='一分石' or b.product='二分石')
-	group by a.trandate,b.product,a.unit
+	group by a.trandate,b.product
+	-------------------------------------------
 	
 	declare @tmp table(
 		gno nvarchar(10),
@@ -58,18 +61,28 @@ z_trans_rj06:--z_trans_rj06
 		insert into @tmp(gno,pno,datea)values('1',RIGHT('00'+CAST(@n as nvarchar),2),RIGHT('00'+CAST(@n as nvarchar),2))
 		set @n = @n - 1
 	end
-	update @tmp set 
-		ma1 = case when b.unit = '台數' and b.product='大陸砂' then b.mount else 0 end
-		,ma2 = case when b.unit = '米數' and b.product='大陸砂' then b.mount else 0 end
-		,mb1 = case when b.unit = '台數' and b.product='粗砂' then b.mount else 0 end
-		,mb2 = case when b.unit = '米數' and b.product='粗砂' then b.mount else 0 end
-		,mc1 = case when b.unit = '台數' and b.product='一分石' then b.mount else 0 end
-		,mc2 = case when b.unit = '米數' and b.product='一分石' then b.mount else 0 end
-		,md1 = case when b.unit = '台數' and b.product='二分石' then b.mount else 0 end
-		,md2 = case when b.unit = '米數' and b.product='二分石' then b.mount else 0 end
+	update @tmp set ma1 = b.inmount ,ma2 =  b.mount3 	
 	from @tmp a
 	left join @tmpa b on RIGHT(b.datea,2)=a.datea
-	update @tmp set tot1=ma1+mb1+mc1+md1,tot2=ma2+mb2+mc2+md2
+	where b.product='大陸砂'
+	
+	update @tmp set mb1 = b.inmount ,mb2 =  b.mount3 	
+	from @tmp a
+	left join @tmpa b on RIGHT(b.datea,2)=a.datea
+	where b.product='粗砂'
+	
+	update @tmp set mc1 = b.inmount ,mc2 =  b.mount3 	
+	from @tmp a
+	left join @tmpa b on RIGHT(b.datea,2)=a.datea
+	where b.product='一分石'
+	
+	update @tmp set md1 = b.inmount ,md2 =  b.mount3 	
+	from @tmp a
+	left join @tmpa b on RIGHT(b.datea,2)=a.datea
+	where b.product='二分石'
+
+	update @tmp set tot1=isnull(ma1,0)+isnull(mb1,0)+isnull(mc1,0)+isnull(md1,0)
+		,tot2=isnull(ma2,0)+isnull(mb2,0)+isnull(mc2,0)+isnull(md2,0)
 	insert into @tmp(gno,pno,ma1,ma2,mb1,mb2,mc1,mc2,md1,md2,tot1,tot2)
 	select '2','zz',SUM(ma1),SUM(ma2),SUM(mb1),SUM(mb2),SUM(mc1),SUM(mc2),SUM(md1),SUM(md2),SUM(tot1),SUM(tot2)
 	from @tmp
