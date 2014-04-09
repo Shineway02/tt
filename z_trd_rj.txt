@@ -94,7 +94,7 @@ z_trd_rj01:--z_trd_rj01
             select case when b.noa is null or a.mount!=b.mount then '7' else ' 1' end,'1'
                 ,@trdaccy,@trdno,@custno,@money,@tax,@plusmoney,@minusmoney,@total
                 ,a.tranaccy,a.tranno,a.trannoq,b.trandate,b.straddr,b.endaddr,b.driverno,b.driver,b.carno
-                ,b.caseno,b.uccno,b.product,b.unit,a.price,a.mount,a.tranmoney
+                ,b.caseno,b.uccno,b.product,a.unit,a.price,a.mount,a.tranmoney
                 ,case when b.noa is null then '出車單【'+a.tranno+'】遺失。' 
                     when a.mount!=b.mount then '出車單【'+a.tranno+'】數量('+CAST(b.mount as nvarchar)+')與立帳單('+CAST(a.mount as nvarchar)+')不符。'
                     else '' end
