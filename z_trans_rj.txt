@@ -131,18 +131,20 @@ z_trans_rj05:--z_trans_rj05
 		productno nvarchar(20),
 		product nvarchar(50),
 		
-		inmount float,
-		mount3 float,
-		mount4 float
+		inmount decimal(10,0),
+		mount3 decimal(10,3),
+		mount4 decimal(10,3),
+		reserve decimal(10,0),
+		miles decimal(10,0)
 	)
 	
 	insert into @tmp(gno,recno,accy,noa,noq,datea,trandate,custno,cust,nick,carno,driverno,driver
 		,straddrno,straddr,endaddrno,endaddr,productno,product
-		,inmount,mount3,mount4)
+		,inmount,mount3,mount4,reserve,miles)
 	select '1',ROW_NUMBER()over(order by a.trandate,a.noa)
 		,a.accy,a.noa,a.noq,a.datea,a.trandate,a.custno,a.comp,b.nick,a.carno,a.driverno,a.driver
 		,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.uccno,a.product
-		,a.inmount,a.mount3,a.mount4
+		,a.inmount,a.mount3,a.mount4,a.reserve,a.miles
 	from view_trans a
 	left join cust b on a.custno=b.noa
 	where isnull(a.datea,'') between @t_bdate and @t_edate
@@ -169,6 +171,8 @@ z_trans_rj05:--z_trans_rj05
 	,inmount a09
 	,mount3 a10
 	,mount4 a11
+	,reserve a12
+	,miles a13
 	from @tmp order by gno,recno;
 	
 z_trans_rj04:--z_trans_rj04
