@@ -108,123 +108,68 @@ z_trans_rj05:--z_trans_rj05
 	declare @t_carteam nvarchar(max)= case when '#non'=[12] then '' else [12] end
 	declare @t_calctype nvarchar(max) = case when '#non'=[14] then '' else [14] end
 	
-	declare @t_pageline int = 30  --一頁的行數
-	-----------------------------------------------------------------
+	---------------------------------------------------------------------------------------------
 	declare @tmp table(
 		gno nvarchar(10),
-		pno nvarchar(10),
-		tranaccy nvarchar(10),
-		tranno nvarchar(20),
-		trannoq nvarchar(10),
+		recno int,
+		accy nvarchar(10),
+		noa nvarchar(20),
+		noq nvarchar(10),
 		datea nvarchar(10),
 		trandate nvarchar(10),
 		custno nvarchar(20),
-		cust nvarchar(40),
-		custnick nvarchar(20),
-		tggno nvarchar(20),
-		tgg nvarchar(40),
-		tggnick nvarchar(20),
+		cust nvarchar(50),
+		nick nvarchar(20),
 		carno nvarchar(20),
 		driverno nvarchar(20),
 		driver nvarchar(20),
 		
-		carteamno nvarchar(20),
-		calctype nvarchar(20),
-		
-		inmount float,
-		pton float,
-		mount float,
-		unit nvarchar(20),
-		price float,
-		total float,
-		
-		outmount float,
-		pton2 float,
-		mount2 float,
-		unit2 nvarchar(20),
-		price2 float,
-		discount float,
-		total2 float,
-		
-		caseno nvarchar(50),
-		caseno2 nvarchar(50),
-		productno nvarchar(20),
-		product nvarchar(50),
 		straddrno nvarchar(20),
 		straddr nvarchar(50),
 		endaddrno nvarchar(20),
 		endaddr nvarchar(50),
-		ef nvarchar(20)
+		productno nvarchar(20),
+		product nvarchar(50),
+		
+		inmount float,
+		mount3 float,
+		mount4 float
 	)
 	
-	insert into @tmp(gno,pno,tranaccy,tranno,trannoq
-		,datea,trandate,custno,cust,custnick
-		,carno,driverno,driver,carteamno,calctype
-		,inmount,pton,mount,unit
-		,outmount,pton2,mount2,unit2
-		,caseno,caseno2,productno,product,straddrno,straddr,endaddrno,endaddr,ef)
-	select '1','1',a.accy,a.noa,a.noq
-		,a.datea,a.trandate,a.custno,a.comp,a.nick
-		,a.carno,a.driverno,a.driver,a.carteamno,a.calctype
-		,a.inmount,a.pton,a.mount,a.unit
-		,a.outmount,a.pton2,a.mount2,a.unit2
-		,a.caseno,a.caseno2,a.uccno,a.product,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.fill
+	insert into @tmp(gno,recno,accy,noa,noq,datea,trandate,custno,cust,nick,carno,driverno,driver
+		,straddrno,straddr,endaddrno,endaddr,productno,product
+		,inmount,mount3,mount4)
+	select '1',ROW_NUMBER()over(order by a.trandate,a.noa)
+		,a.accy,a.noa,a.noq,a.datea,a.trandate,a.custno,a.comp,b.nick,a.carno,a.driverno,a.driver
+		,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.uccno,a.product
+		,a.inmount,a.mount3,a.mount4
 	from view_trans a
-	where a.datea between @t_bdate and @t_edate
-	and a.trandate between @t_btrandate and @t_etrandate
-	and a.custno between @t_bcustno and @t_ecustno
-	and a.driverno between @t_bdriverno and @t_edriverno
-	and (len(@t_carno)=0 or (len(ISNULL(a.carno,''))>0 and CHARINDEX(','+a.carno+',',','+@t_carno+',')>0))
-	and (len(@t_carteam)=0 or (len(ISNULL(a.carteamno,''))>0 and CHARINDEX(','+a.carteamno+',',','+@t_carteam+',')>0))
-	and (len(@t_calctype)=0 or (len(ISNULL(a.calctype,''))>0 and CHARINDEX(','+a.calctype+',',','+@t_calctype+',')>0))
-	order by a.trandate,a.noa,a.noq
+	left join cust b on a.custno=b.noa
+	where isnull(a.datea,'') between @t_bdate and @t_edate
+	and isnull(a.trandate,'') between @t_btrandate and @t_etrandate
+	and ISNULL(a.custno,'') between @t_bcustno and @t_ecustno
+	and ISNULL(a.driverno,'') between @t_bdriverno and @t_edriverno
+	and (len(ISNULL(@t_carno,''))=0 or CHARINDEX(','+@t_carno+',',','+a.carno+',')>0) 
+	and (len(ISNULL(@t_carteam,''))=0 or CHARINDEX(','+@t_carteam+',',','+a.carteam+',')>0) 
+	and (len(ISNULL(@t_calctype,''))=0 or CHARINDEX(','+@t_calctype+',',','+a.calctype+',')>0) 
 	
-	update @tmp set price=b.price,total=b.total
-	from @tmp a
-	right join view_trds b on a.tranaccy=b.tranaccy and a.tranno=b.tranno and a.trannoq=b.trannoq
+	insert into @tmp(gno,inmount,mount3,mount4)
+	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) from @tmp
 	
-	update @tmp set price2=b.price,discount=b.discount,total2=b.[money],tggno=c.tggno,tgg=c.tgg,tggnick=d.nick
-	from @tmp a
-	right join view_tres b on a.tranaccy=b.tranaccy and a.tranno=b.tranno and a.trannoq=b.trannoq
-	left join view_tre c on b.noa=c.noa
-	left join tgg d on c.tggno=d.noa
-	
-	insert into @tmp(gno,pno,total,total2)
-	select '2','2',SUM(isnull(total,0)),SUM(isnull(total2,0)) from @tmp
-	--交運日期	登錄日期	車隊	類別	車牌	司機	客戶	起點	迄點	產品	E/F	
-	--收數量	收補	單位	單價	收金額	發數量 	發補	單位	單價	折扣	發金額	櫃號	
-
 	select * 
-	,row_number()over(order by a.pno) rr
-	,a.trandate a01
-	,a.datea a02
-	,case when b.noa is null then a.carteamno else b.team end a03
-	,case when c.noa is null then a.calctype else c.typea end a04
-	,a.tggnick a05
-	,a.carno a06
-	,a.driver a07
-	,a.custnick a08
-	,a.straddr a09
-	,a.endaddr a10
-	,a.product a11
-	,a.ef a12
-	,case when a.inmount=0 then '' else cast(cast(a.inmount as decimal(10,2))as nvarchar)end a13
-	,case when a.pton=0 then '' else cast(cast(a.pton as decimal(10,2))as nvarchar)end a14
-	,a.unit a15
-	,case when a.price=0 then '' else cast(cast(a.price as decimal(10,2))as nvarchar)end a16
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) a17
-	,case when a.outmount=0 then '' else cast(cast(a.outmount as decimal(10,2))as nvarchar)end a18
-	,case when a.pton2=0 then '' else cast(cast(a.pton2 as decimal(10,2))as nvarchar)end a19
-	,a.unit2 a20
-	,case when a.price2=0 then '' else cast(cast(a.price2 as decimal(10,2))as nvarchar)end a21
-	,case when a.discount=0 then '' else cast(cast(a.discount as decimal(10,2))as nvarchar)end a22
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) a23
-	,caseno a24
-	,caseno a25
-	from @tmp a 
-	left join carteam b on a.carteamno=b.noa
-	left join calctypes c on a.calctype = c.noa+c.noq
-	order by a.pno;
+	,recno rr
+	,trandate a01
+	,datea a02
+	,carno a03
+	,driver a04
+	,nick a05
+	,straddr a06
+	,endaddr a07
+	,product a08
+	,inmount a09
+	,mount3 a10
+	,mount4 a11
+	from @tmp order by gno,recno;
 	
 z_trans_rj04:--z_trans_rj04
 	declare @t_bmon nvarchar(10) = case when '#non'=[5] then '' else [5] end
