@@ -135,7 +135,17 @@ z_trans_rj05:--z_trans_rj05
 		mount3 decimal(10,3),
 		mount4 decimal(10,3),
 		reserve decimal(10,0),
-		miles decimal(10,0)
+		miles decimal(10,0),
+		
+		unit nvarchar(20),
+		price decimal(10,0),
+		mount float,
+		[money] decimal(10,0),
+		
+		unit2 nvarchar(20),
+		price2 decimal(10,0),
+		mount2 float,
+		money2 decimal(10,0)
 	)
 	
 	insert into @tmp(gno,recno,accy,noa,noq,datea,trandate,custno,cust,nick,carno,driverno,driver
@@ -154,7 +164,25 @@ z_trans_rj05:--z_trans_rj05
 	and (len(ISNULL(@t_carno,''))=0 or CHARINDEX(','+@t_carno+',',','+a.carno+',')>0) 
 	and (len(ISNULL(@t_carteam,''))=0 or CHARINDEX(','+@t_carteam+',',','+a.carteam+',')>0) 
 	and (len(ISNULL(@t_calctype,''))=0 or CHARINDEX(','+@t_calctype+',',','+a.calctype+',')>0) 
+	--客戶單價
+	update @tmp set unit = c.custunit,price=c.custprice
+	from @tmp a
+	left join addr b on a.straddrno=b.straddrno and a.endaddrno=b.endaddrno and a.productno=b.productno
+	outer apply(select top 1 * from addrs where noa=b.noa order by datea desc) c
 	
+	--司機單價
+	update @tmp set unit2=case ISNULL(d.cartype,'') when '2' then c.driverunit else c.driverunit2 end
+		,price2 =case ISNULL(d.cartype,'') when '2' then c.driverprice else c.driverprice2 end
+	from @tmp a
+	left join addr b on a.straddrno=b.straddrno and a.endaddrno=b.endaddrno and a.productno=b.productno
+	outer apply(select top 1 * from addrs where noa=b.noa order by datea desc) c
+	left join car2 d on a.carno=d.carno 
+	
+	update @tmp set mount = case unit when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
+		,[money] = ROUND( case unit when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price,0)
+		,mount2 = case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
+		,money2 = ROUND( case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price2,0)
+
 	insert into @tmp(gno,inmount,mount3,mount4)
 	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) from @tmp
 	
@@ -173,6 +201,14 @@ z_trans_rj05:--z_trans_rj05
 	,mount4 a11
 	,reserve a12
 	,miles a13
+	,mount b01
+	,unit b02
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price),1)),4,12)) b03
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) b04
+	,mount2 b05
+	,unit2 b06
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price2),1)),4,12)) b07
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,money2),1)),4,12)) b08
 	from @tmp order by gno,recno;
 	
 z_trans_rj04:--z_trans_rj04
