@@ -107,7 +107,6 @@ z_trans_rj05:--z_trans_rj05
 	declare @t_carno nvarchar(max) = case when '#non'=[11] then '' else [11] end
 	declare @t_carteam nvarchar(max)= case when '#non'=[12] then '' else [12] end
 	declare @t_calctype nvarchar(max) = case when '#non'=[14] then '' else [14] end
-	
 	---------------------------------------------------------------------------------------------
 	declare @tmp table(
 		gno nvarchar(10),
@@ -139,12 +138,12 @@ z_trans_rj05:--z_trans_rj05
 		
 		unit nvarchar(20),
 		price decimal(10,0),
-		mount float,
+		mount decimal(10,3),
 		[money] decimal(10,0),
 		
 		unit2 nvarchar(20),
 		price2 decimal(10,0),
-		mount2 float,
+		mount2 decimal(10,3),
 		money2 decimal(10,0)
 	)
 	
@@ -183,8 +182,10 @@ z_trans_rj05:--z_trans_rj05
 		,mount2 = case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
 		,money2 = ROUND( case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price2,0)
 
-	insert into @tmp(gno,inmount,mount3,mount4)
-	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) from @tmp
+	insert into @tmp(gno,inmount,mount3,mount4,mount,mount2,[money],money2)
+	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) 
+		,SUM(ISNULL(mount2,0)) ,SUM(ISNULL(mount3,0)),SUM(ISNULL([money],0)),SUM(ISNULL([money2],0))  
+	from @tmp
 	
 	select * 
 	,recno rr
