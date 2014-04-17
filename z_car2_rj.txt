@@ -72,48 +72,48 @@ z_car2_rj01:--z_car2_rj01
 	)
 
 
-	select a.carno
-		,b.nick --車行
-		,c.cartype--車別
-		,d.kind--車種
-		,a.carmode--車身式樣
-		,e.spec--車種樣式
-		,a.driverno--司機
-		,f.namea
-		,a.carownerno--車主
-		,g.namea
-		,a.indate--遷入日期
-		,a.invoicemoney--發票金額
-		,a.inplace--車輛來源
-		,a.outdate--遷出日期
-		,a.outmoney--遷出金額
-		,a.outplace--遷出地點
-		,a.enddate--報廢日期
-		,a.wastedate--繳銷日期
-		,a.suspdate--報停日期
-		,a.passdate--發照日期
-		,a.limitdate--有效期限
-		,a.reissuedate--補照日期
-		,a.caryear--出廠年份
-		,a.caryeartw--年份(中式)
-		,a.checkdate--驗車日期
-		,a.carbrandno--廠牌
-		,a.carstyleno--車輛型式
-		,a.checktype--驗車方式
-		,a.lengthb--車長
-		,a.width--車寬
-		,a.height--車高
-		,a.wheelbase--軸距
-		,a.axlenum--軸數
-		,a.wheelnum--輪數
-		,a.weight1--車重
-		,a.weight2--載重
-		,a.ton--總重
-		,a.weight3--總聯結重量
-		,a.cylinder--汽缸數
-		,a.cc--CC數
-		,a.engineno--引擎號碼
-		,a.memo--備註
+	select a.carno a01
+		,b.nick a02--車行
+		,c.cartype a03--車別
+		,d.kind a04--車種
+		,a.carmode a05--車身式樣
+		,e.spec a06--車種樣式
+		,a.driverno a07--司機
+		,f.namea a08
+		,a.carownerno a09--車主
+		,g.namea a10
+		,a.indate a11--遷入日期
+		,a.invoicemoney a12--發票金額
+		,a.inplace a13--車輛來源
+		,a.outdate a14--遷出日期
+		,a.outmoney a15--遷出金額
+		,a.outplace a16--遷出地點
+		,a.enddate a17--報廢日期
+		,a.wastedate a18--繳銷日期
+		,a.suspdate a19--報停日期
+		,a.passdate a20--發照日期
+		,a.limitdate a21--有效期限
+		,a.reissuedate a22--補照日期
+		,a.caryear a23--出廠年份
+		,a.caryeartw a24--年份(中式)
+		,a.checkdate a25--驗車日期
+		,a.carbrandno a26--廠牌
+		,a.carstyleno a27--車輛型式
+		,a.checktype a28--驗車方式
+		,a.lengthb a29--車長
+		,a.width a30--車寬
+		,a.height a31--車高
+		,a.wheelbase a32--軸距
+		,a.axlenum a33--軸數
+		,a.wheelnum a34--輪數
+		,a.weight1 a35--車重
+		,a.weight2 a36--載重
+		,a.ton a37--總重
+		,a.weight3 a38--總聯結重量
+		,a.cylinder a39--汽缸數
+		,a.cc a40--CC數
+		,a.engineno a41--引擎號碼
+		,a.memo a42--備註
 	from car2 a
 	left join cardeal b on a.cardealno=b.noa
 	left join @cartype c on a.cartype = c.noa
@@ -121,4 +121,4 @@ z_car2_rj01:--z_car2_rj01
 	left join carspec e on a.carspecno=e.noa
 	left join driver f on a.driverno=f.noa
 	left join carowner g on a.carownerno=g.noa
-	order by isnull(c.cartype,''),a.carno
+	order by isnull(c.cartype,''),a.carno;
