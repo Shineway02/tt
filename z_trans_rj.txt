@@ -96,6 +96,7 @@ z_trans_rj06:--z_trans_rj06
 	select * from @tmp order by pno;
 
 z_trans_rj05:--z_trans_rj05
+	SET QUOTED_IDENTIFIER OFF
 	declare @t_bdate nvarchar(10) = case when '#non'=[1] then '' else [1] end
 	declare @t_edate nvarchar(10) = case when '#non'=[2] then char(255) else [2] end
 	declare @t_btrandate nvarchar(10) = case when '#non'=[3] then '' else [3] end
@@ -191,7 +192,7 @@ z_trans_rj05:--z_trans_rj05
 	,recno rr
 	,trandate a01
 	,datea a02
-	,carno a03
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+carno+'</a>' a03
 	,driver a04
 	,nick a05
 	,straddr a06
