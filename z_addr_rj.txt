@@ -1,4 +1,6 @@
-z_addr_rj01:--z_addr_rj01	
+z_addr_rj01:--z_addr_rj01
+	SET QUOTED_IDENTIFIER OFF
+	declare @cmd nvarchar(max)		
 	declare @t_bcustno nvarchar(20) = case when '#non'=[2] then '' else [2] end
 	declare @t_ecustno nvarchar(20) = case when '#non'=[3] then char(255) else [3] end
 	declare @t_bstraddrno nvarchar(20) = case when '#non'=[4] then '' else [4] end
@@ -11,6 +13,7 @@ z_addr_rj01:--z_addr_rj01
 	declare @tmp table(
 		recno int,
 		gno nvarchar(20),
+		noa nvarchar(20),
 		straddrno nvarchar(20),
 		straddr nvarchar(50),
 		endaddrno nvarchar(20),
@@ -30,10 +33,10 @@ z_addr_rj01:--z_addr_rj01
 		driverprice2 float
 	
 	)
-	insert into @tmp(recno,gno,straddrno,straddr,endaddrno,endaddr,productno,product,custno,cust,nick
+	insert into @tmp(recno,gno,noa,straddrno,straddr,endaddrno,endaddr,productno,product,custno,cust,nick
 		,datea,custunit,custprice,driverunit,driverprice,driverunit2,driverprice2)
 	select ROW_NUMBER()over(order by a.straddrno,a.endaddrno,a.productno),'1'
-		,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.productno,a.product,a.custno,a.cust,a.nick
+		,a.noa,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.productno,a.product,a.custno,a.cust,a.nick
 		,b.datea,b.custunit,b.custprice,b.driverunit,b.driverprice,b.driverunit2,b.driverprice2
 	from addr a
 	outer apply (select top 1 * from addrs where a.noa=noa order by isnull(datea,'') desc) b
@@ -43,7 +46,8 @@ z_addr_rj01:--z_addr_rj01
 	and isnull(a.custno,'') between @t_bcustno and @t_ecustno
 	order by a.straddrno,a.endaddrno,a.productno
 	
-	select * 
+	select "addr_rj?noa=\'"+noa+"\' and "+cast(recno as nvarchar)+"=$rr?" ghref 
+	,* 
 	,recno rr
 	,straddr a01
 	,endaddr a02
