@@ -134,6 +134,7 @@ z_trans_rj05:--z_trans_rj05
 		inmount decimal(10,0),
 		mount3 decimal(10,3),
 		mount4 decimal(10,3),
+		tolls float,
 		reserve decimal(10,0),
 		miles decimal(10,0),
 		
@@ -150,11 +151,11 @@ z_trans_rj05:--z_trans_rj05
 	
 	insert into @tmp(gno,recno,accy,noa,noq,datea,trandate,custno,cust,nick,carno,driverno,driver
 		,straddrno,straddr,endaddrno,endaddr,productno,product
-		,inmount,mount3,mount4,reserve,miles)
+		,inmount,mount3,mount4,tolls,reserve,miles)
 	select '1',ROW_NUMBER()over(order by a.trandate,a.noa)
 		,a.accy,a.noa,a.noq,a.datea,a.trandate,a.custno,a.comp,b.nick,a.carno,a.driverno,a.driver
 		,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.uccno,a.product
-		,a.inmount,a.mount3,a.mount4,a.reserve,a.miles
+		,a.inmount,a.mount3,a.mount4,a.tolls,a.reserve,a.miles
 	from view_trans a
 	left join cust b on a.custno=b.noa
 	where isnull(a.datea,'') between @t_bdate and @t_edate
@@ -183,12 +184,13 @@ z_trans_rj05:--z_trans_rj05
 		,mount2 = case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
 		,money2 = ROUND( case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price2,0)
 
-	insert into @tmp(gno,inmount,mount3,mount4,mount,mount2,[money],money2)
+	insert into @tmp(gno,inmount,mount3,mount4,mount,mount2,[money],money2,tolls,reserve)
 	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) 
-		,SUM(ISNULL(mount2,0)) ,SUM(ISNULL(mount3,0)),SUM(ISNULL([money],0)),SUM(ISNULL([money2],0))  
+		,SUM(ISNULL(mount2,0)) ,SUM(ISNULL(mount3,0)),SUM(ISNULL([money],0)),SUM(ISNULL([money2],0)),SUM(ISNULL([tolls],0)),SUM(ISNULL([reserve],0))    
 	from @tmp
 	
-	select * 
+	select  "trans_rj?noa=\'"+noa+"\' and "+cast(recno as nvarchar)+"=$rr?"+accy ghref 
+	,* 
 	,recno rr
 	,trandate a01
 	,datea a02
@@ -203,6 +205,7 @@ z_trans_rj05:--z_trans_rj05
 	,mount4 a11
 	,reserve a12
 	,miles a13
+	,tolls a14
 	,mount b01
 	,unit b02
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price),1)),4,12)) b03
