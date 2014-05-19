@@ -108,6 +108,8 @@ z_trans_rj05:--z_trans_rj05
 	declare @t_carno nvarchar(max) = case when '#non'=[11] then '' else [11] end
 	declare @t_carteam nvarchar(max)= case when '#non'=[12] then '' else [12] end
 	declare @t_calctype nvarchar(max) = case when '#non'=[14] then '' else [14] end
+	declare @t_straddrno nvarchar(max) = case when '#non'=[16] then '' else [16] end
+	declare @t_endaddrno nvarchar(max) = case when '#non'=[17] then '' else [17] end
 	---------------------------------------------------------------------------------------------
 	declare @tmp table(
 		gno nvarchar(10),
@@ -165,6 +167,8 @@ z_trans_rj05:--z_trans_rj05
 	and (len(ISNULL(@t_carno,''))=0 or CHARINDEX(','+@t_carno+',',','+a.carno+',')>0) 
 	and (len(ISNULL(@t_carteam,''))=0 or CHARINDEX(','+@t_carteam+',',','+a.carteam+',')>0) 
 	and (len(ISNULL(@t_calctype,''))=0 or CHARINDEX(','+@t_calctype+',',','+a.calctype+',')>0) 
+	and (len(@t_straddrno)=0 or a.straddrno=@t_straddrno)
+	and (len(@t_endaddrno)=0 or a.endaddrno=@t_endaddrno)
 	--客戶單價
 	update @tmp set unit = c.custunit,price=c.custprice
 	from @tmp a
