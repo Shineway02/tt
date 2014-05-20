@@ -55,6 +55,9 @@ z_trans_rj06:--z_trans_rj06
 		tot1 float,--台數
 		tot2 decimal(10,2),--米數
 		tot3 decimal(10,2),--成品米數
+		
+		na1 decimal(10,2),--比例數 1.213
+		na2 decimal(10,2),--比例數 1.23
 		memo nvarchar(max)
 	)
 	while @n>0
@@ -89,9 +92,10 @@ z_trans_rj06:--z_trans_rj06
 
 	update @tmp set tot1=isnull(ma1,0)+isnull(mb1,0)+isnull(mc1,0)+isnull(md1,0)
 		,tot2=isnull(ma2,0)+isnull(mb2,0)+isnull(mc2,0)+isnull(md2,0)
+	update @tmp set na1 = round(tot3*1.213,2),na2 = round(tot3*1.23,2)
 		
-	insert into @tmp(gno,pno,ma1,ma2,mb1,mb2,mc1,mc2,md1,md2,tot1,tot2,tot3)
-	select '2','zz',SUM(ma1),SUM(ma2),SUM(mb1),SUM(mb2),SUM(mc1),SUM(mc2),SUM(md1),SUM(md2),SUM(tot1),SUM(tot2),SUM(ISNULL(tot3,0))
+	insert into @tmp(gno,pno,ma1,ma2,mb1,mb2,mc1,mc2,md1,md2,tot1,tot2,tot3,na1,na2)
+	select '2','zz',SUM(ma1),SUM(ma2),SUM(mb1),SUM(mb2),SUM(mc1),SUM(mc2),SUM(md1),SUM(md2),SUM(tot1),SUM(tot2),SUM(ISNULL(tot3,0)),SUM(ISNULL(na1,0)),SUM(ISNULL(na2,0))
 	from @tmp
 	select * from @tmp order by pno;
 
