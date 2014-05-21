@@ -97,7 +97,7 @@ z_tre_rj02:--z_tre_rj02 依司機
                 ,a.tranaccy,a.tranno,a.trannoq,b.trandate,b.straddr,b.endaddr,b.carno
                 ,b.caseno,b.uccno,b.product,a.unit,a.price,a.mount,a.[money]
                 ,case when b.noa is null then '出車單【'+a.tranno+'】遺失。' 
-                    when a.mount!=b.mount2 then '出車單【'+a.tranno+'】數量('+CAST(b.mount2 as nvarchar)+')與立帳單('+CAST(a.mount as nvarchar)+')不符。'
+                  --  when a.mount!=b.mount2 then '出車單【'+a.tranno+'】數量('+CAST(b.mount2 as nvarchar)+')與立帳單('+CAST(a.mount as nvarchar)+')不符。'
                     else '' end
             from view_tres a
             left join view_trans b on a.tranaccy=b.accy and a.tranno=b.noa and a.trannoq=b.noq
@@ -312,7 +312,7 @@ z_tre_rj01:--z_tre_rj01 依應付車行
                 ,a.tranaccy,a.tranno,a.trannoq,b.trandate,b.straddr,b.endaddr,b.carno
                 ,b.caseno,b.uccno,b.product,a.unit,a.price,a.mount,a.[money]
                 ,case when b.noa is null then '出車單【'+a.tranno+'】遺失。' 
-                    when a.mount!=b.mount2 then '出車單【'+a.tranno+'】數量('+CAST(b.mount2 as nvarchar)+')與立帳單('+CAST(a.mount as nvarchar)+')不符。'
+                 --   when a.mount!=b.mount2 then '出車單【'+a.tranno+'】數量('+CAST(b.mount2 as nvarchar)+')與立帳單('+CAST(a.mount as nvarchar)+')不符。'
                     else '' end
             from view_tres a
             left join view_trans b on a.tranaccy=b.accy and a.tranno=b.noa and a.trannoq=b.noq
