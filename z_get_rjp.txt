@@ -13,15 +13,20 @@ z_get_rjp01:--z_get_rjp01
 		agg6 float
 	)
 	-----------------------------------------------------------------------------
-	declare @bdate date = cast(cast(left(@t_bdate,3) as int)+1911 as nvarchar)+right(@t_bdate,6)
-	declare @edate date = cast(cast(left(@t_edate,3) as int)+1911 as nvarchar)+right(@t_edate,6)
-	declare @n int = 0
-	while @bdate<=@edate and @n<90 --最多一次列出90天
-	begin
-		insert into @tmp(gno,datea)values('1', right('000'+cast(YEAR(@bdate)-1911 as nvarchar),3)+'/'+RIGHT('00'+CAST(month(@bdate) as nvarchar),2)+'/'+RIGHT('00'+CAST(day(@bdate) as nvarchar),2) )
-		set @bdate = dateadd(dd,1,@bdate)
-		set @n = @n + 1
-	end
+	begin try
+		declare @bdate date = cast(cast(left(@t_bdate,3) as int)+1911 as nvarchar)+right(@t_bdate,6)
+		declare @edate date = cast(cast(left(@t_edate,3) as int)+1911 as nvarchar)+right(@t_edate,6)
+		declare @n int = 0
+		while @bdate<=@edate and @n<90 --最多一次列出90天
+		begin
+			insert into @tmp(gno,datea)values('1', right('000'+cast(YEAR(@bdate)-1911 as nvarchar),3)+'/'+RIGHT('00'+CAST(month(@bdate) as nvarchar),2)+'/'+RIGHT('00'+CAST(day(@bdate) as nvarchar),2) )
+			set @bdate = dateadd(dd,1,@bdate)
+			set @n = @n + 1
+		end
+	end try
+	begin catch
+		insert into @tmp(gno,datea)values('1','日期異常。')
+	end catch
 	
 	--噸/X = 米
 	--X = {粗石 1.7,一分石 1.5,大陸砂 1.6}
@@ -56,4 +61,4 @@ z_get_rjp01:--z_get_rjp01
 	select '2',CHAR(255),SUM(ISNULL(agg1,0)),SUM(ISNULL(agg2,0)),SUM(ISNULL(agg3,0)),SUM(ISNULL(agg4,0)),SUM(ISNULL(agg5,0)),SUM(ISNULL(agg6,0))
 	from @tmp
 	
-	select * from @tmp order by datea
+	select * from @tmp order by datea;
