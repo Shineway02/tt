@@ -61,4 +61,6 @@ z_get_rjp01:--z_get_rjp01
 	select '2',CHAR(255),SUM(ISNULL(agg1,0)),SUM(ISNULL(agg2,0)),SUM(ISNULL(agg3,0)),SUM(ISNULL(agg4,0)),SUM(ISNULL(agg5,0)),SUM(ISNULL(agg6,0))
 	from @tmp
 	
-	select * from @tmp order by datea;
+	select * 
+	,'get_rj?datea=$datea?'+left(datea,3) ghref 
+	from @tmp order by datea;
