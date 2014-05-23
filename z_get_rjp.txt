@@ -28,8 +28,8 @@ z_get_rjp01:--z_get_rjp01
 		insert into @tmp(gno,datea)values('1','日期異常。')
 	end catch
 	
-	--噸/X = 米
-	--X = {粗石 1.7,一分石 1.5,大陸砂 1.6}
+	--公斤/X = 米
+	--X = {一分石、二分石 1500,砂、大陸砂 1600}
 
 	update @tmp set agg1=case when agg1_mount!=0 then agg1_mount else round(agg1_weight/1.5,2) end
 		,agg2=case when agg2_mount!=0 then agg2_mount else round(agg2_weight/1.5,2) end
