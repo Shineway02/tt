@@ -31,12 +31,12 @@ z_get_rjp01:--z_get_rjp01
 	--公斤/X = 米
 	--X = {一分石、二分石 1500,砂、大陸砂 1600}
 
-	update @tmp set agg1=case when agg1_mount!=0 then agg1_mount else round(agg1_weight/1.5,2) end
-		,agg2=case when agg2_mount!=0 then agg2_mount else round(agg2_weight/1.5,2) end
-		,agg3=case when agg3_mount!=0 then agg3_mount else round(agg3_weight/1.5,2) end
-		,agg4=case when agg4_mount!=0 then agg4_mount else round(agg4_weight/1.5,2) end
-		,agg5=case when agg5_mount!=0 then agg5_mount else round(agg5_weight/1.7,2) end
-		,agg6=case when agg6_mount!=0 then agg6_mount else round(agg6_weight/1.6,2) end
+	update @tmp set agg1=agg1_weight
+		,agg2=agg2_weight
+		,agg3=agg3_weight
+		,agg4=agg4_weight
+		,agg5=agg5_weight
+		,agg6=agg6_weight
 	from @tmp a
 	left join(
 		select b.datea

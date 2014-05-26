@@ -70,15 +70,14 @@ z_trans_rj06:--z_trans_rj06
 		na1 decimal(10,2),--比例數 1.213
 		na2 decimal(10,2),--比例數 1.23
 		
-		aa1 float, --AGG1
-		aa2 float, --AGG2+3
-		aa3 float, --AGG4
-		aa4 float, --AGG5
-		aa5 float, --AGG6
+		aa1 float, --AGG1+3 砂         公斤
+		aa2 float, --AGG2   大陸砂     公斤 
+		aa3 float, --AGG4+6 一分石     公斤 
+		aa4 float, --AGG5   二分石     公斤
 		
-		bb1 decimal(10,2),--砂石米數  (AGG1+AGG2+AGG3)/1600+(AGG4+AGG6)/1500
-		bb2 decimal(10,2),--石米數    (AGG1+AGG2+AGG3)/1600
-		bb3 decimal(10,2),--砂米數    (AGG4+AGG6)/1500
+		bb1 decimal(10,2),--砂石米數  (AGG1+AGG2+AGG3)/1600+(AGG4+AGG5+AGG6)/1500
+		bb2 decimal(10,2),--砂米數    (AGG1+AGG2+AGG3)/1600
+		bb3 decimal(10,2),--石米數    (AGG4+AGG5+AGG6)/1500
 		
 		mm1 int, --金額
 		mm2 int, --稅
@@ -122,39 +121,31 @@ z_trans_rj06:--z_trans_rj06
 	update @tmp set mm2 = round(mm1*0.05,0)
 	update @tmp set mm3 = mm1+mm2
 	--------------------------------------------------------------
-	update @tmp set aa1 = case when mount!=0 then mount else [weight]/1.5 end
+	update @tmp set aa1 = isnull(b.[weight],0)
 	from @tmp a
-	left join @tmpb b on RIGHT(b.datea,2)=a.datea
-	where b.productno='AGG1'
+	left join (select datea,SUM(isnull([weight],0)) [weight] from @tmpb where productno='AGG1' or productno='AGG3' group by datea) b on RIGHT(b.datea,2)=a.datea
+
+	update @tmp set aa2 = isnull(b.[weight],0)
+	from @tmp a
+	left join (select datea,SUM(isnull([weight],0)) [weight] from @tmpb where productno='AGG2' group by datea) b on RIGHT(b.datea,2)=a.datea
 	
-	update @tmp set aa2 = case when mount!=0 then mount else [weight]/1.5 end
+	update @tmp set aa3 = isnull(b.[weight],0)
 	from @tmp a
-	left join @tmpb b on RIGHT(b.datea,2)=a.datea
-	where b.productno='AGG2' or b.productno='AGG3'
+	left join (select datea,SUM(isnull([weight],0)) [weight] from @tmpb where productno='AGG4' or productno='AGG6' group by datea) b on RIGHT(b.datea,2)=a.datea
 	
-	update @tmp set aa3 = case when mount!=0 then mount else [weight]/1.5 end
+	update @tmp set aa4 = isnull(b.[weight],0)
 	from @tmp a
-	left join @tmpb b on RIGHT(b.datea,2)=a.datea
-	where b.productno='AGG4'
+	left join (select datea,SUM(isnull([weight],0)) [weight] from @tmpb where productno='AGG5' group by datea) b on RIGHT(b.datea,2)=a.datea
 	
-	update @tmp set aa4 = case when mount!=0 then mount else [weight]/1.7 end
-	from @tmp a
-	left join @tmpb b on RIGHT(b.datea,2)=a.datea
-	where b.productno='AGG5'
-	
-	update @tmp set aa5 = case when mount!=0 then mount else [weight]/1.6 end
-	from @tmp a
-	left join @tmpb b on RIGHT(b.datea,2)=a.datea
-	where b.productno='AGG6'
 	---------------------------------
-	update @tmp set bb1 = ROUND((isnull(aa1,0)+isnull(aa2,0))/1600+(isnull(aa3,0)+isnull(aa5,0))/1500 ,2)
+	update @tmp set bb1 = ROUND((isnull(aa1,0)+isnull(aa2,0))/1600+(isnull(aa3,0)+isnull(aa4,0))/1500 ,2)
 	update @tmp set bb2 = ROUND((isnull(aa1,0)+isnull(aa2,0))/1600 ,2)
-	update @tmp set bb3 = ROUND((isnull(aa3,0)+isnull(aa5,0))/1500 ,2)	
+	update @tmp set bb3 = ROUND((isnull(aa3,0)+isnull(aa4,0))/1500 ,2)	
 	--------------------------------------------------------------------------------------	
 	insert into @tmp(gno,pno,ma1,ma2,mb1,mb2,mc1,mc2,md1,md2,tot1,tot2,tot3,na1,na2,mm1,mm2,mm3
-		,aa1,aa2,aa3,aa4,aa5,bb1,bb2,bb3)
+		,aa1,aa2,aa3,aa4,bb1,bb2,bb3)
 	select '2','zz',SUM(ma1),SUM(ma2),SUM(mb1),SUM(mb2),SUM(mc1),SUM(mc2),SUM(md1),SUM(md2),SUM(tot1),SUM(tot2),SUM(ISNULL(tot3,0)),SUM(ISNULL(na1,0)),SUM(ISNULL(na2,0)),SUM(ISNULL(mm1,0)),SUM(ISNULL(mm2,0)),SUM(ISNULL(mm3,0))
-		,SUM(ISNULL(aa1,0)),SUM(ISNULL(aa2,0)),SUM(ISNULL(aa3,0)),SUM(ISNULL(aa4,0)),SUM(ISNULL(aa5,0))
+		,SUM(ISNULL(aa1,0)),SUM(ISNULL(aa2,0)),SUM(ISNULL(aa3,0)),SUM(ISNULL(aa4,0))
 		,SUM(ISNULL(bb1,0)),SUM(ISNULL(bb2,0)),SUM(ISNULL(bb3,0))
 	from @tmp
 	select * from @tmp order by pno;
