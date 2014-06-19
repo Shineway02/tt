@@ -56,9 +56,9 @@ z_addr_rj01:--z_addr_rj01
 	,datea a05
 	,custunit a06
 	,case isnull(custprice,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,custprice),1)),4,12)) end a07
-	,driverunit a08
-	,case isnull(driverprice,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,driverprice),1)),4,12)) end a09
-	,driverunit2 a10
-	,case isnull(driverprice2,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,driverprice2),1)),4,12)) end a11
+	,driverunit2 a08
+	,case isnull(driverprice2,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,driverprice2),1)),4,12)) end a09
+	,driverunit a10
+	,case isnull(driverprice,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,driverprice),1)),4,12)) end a11
 	from @tmp
 	order by rr;
