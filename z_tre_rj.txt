@@ -91,7 +91,7 @@ z_tre_rj02:--z_tre_rj02 依司機
 				,plusmoney,minusmoney,total
                 ,tranaccy,tranno,trannoq,trandate,straddr,endaddr,carno
                 ,caseno,productno,product,unit,price,mount,moneys,memo)
-            select case when b.noa is null or a.mount!=b.mount2 then '7' else ' 1' end,'1'
+            select '1','1'
                 ,@treaccy,@treno,@tggno,@driverno,@driver,@money
 				,@plusmoney,@minusmoney,@total
                 ,a.tranaccy,a.tranno,a.trannoq,b.trandate,b.straddr,b.endaddr,b.carno
@@ -306,7 +306,7 @@ z_tre_rj01:--z_tre_rj01 依應付車行
 				,plusmoney,minusmoney,total
                 ,tranaccy,tranno,trannoq,trandate,straddr,endaddr,carno
                 ,caseno,productno,product,unit,price,mount,moneys,memo)
-            select case when b.noa is null or a.mount!=b.mount2 then '7' else ' 1' end,'1'
+            select '1','1'
                 ,@treaccy,@treno,@tggno,@driverno,@driver,@money
 				,@plusmoney,@minusmoney,@total
                 ,a.tranaccy,a.tranno,a.trannoq,b.trandate,b.straddr,b.endaddr,b.carno
