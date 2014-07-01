@@ -120,7 +120,7 @@ z_trans_rj06:--z_trans_rj06
 	update @tmp set na1 = round(tot3*1.213,2),na2 = round(tot3*1.23,2),mm1 = round(tot3*ISNULL(b.price,0),0)
 	from @tmp a
 	left join (select * 
-		from (select ROW_NUMBER()over(order by datea,noa)recno,datea,price from view_get where LEFT(datea,6)=@t_mon)a 
+		from (select ROW_NUMBER()over(partition by datea order by noa)recno,datea,price from view_get where LEFT(datea,6)=@t_mon)a 
 		where a.recno=1) b on @t_mon+'/'+a.datea=b.datea
 	
 	update @tmp set mm2 = round(mm1*0.05,0)
