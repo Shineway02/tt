@@ -10,7 +10,8 @@ z_get_rjp01:--z_get_rjp01
 		agg3 float,
 		agg4 float,
 		agg5 float,
-		agg6 float
+		agg6 float,
+		price float
 	)
 	-----------------------------------------------------------------------------
 	begin try
@@ -37,6 +38,7 @@ z_get_rjp01:--z_get_rjp01
 		,agg4=agg4_weight
 		,agg5=agg5_weight
 		,agg6=agg6_weight
+		,price = isnull(c.price,0)
 	from @tmp a
 	left join(
 		select b.datea
@@ -56,6 +58,10 @@ z_get_rjp01:--z_get_rjp01
 		left join view_get b on a.noa=b.noa
 		where b.datea between @t_bdate and @t_edate
 		group by b.datea) b on a.datea=b.datea
+	left join (
+		select datea,row_number()over(partition by datea order by noa) recno,price 
+		from view_get 
+		where isnull(price,0)!=0 and datea between @t_bdate and @t_edate) c on a.datea=c.datea and c.recno=1
 	
 	insert into @tmp(gno,datea,agg1,agg2,agg3,agg4,agg5,agg6)
 	select '2',CHAR(255),SUM(ISNULL(agg1,0)),SUM(ISNULL(agg2,0)),SUM(ISNULL(agg3,0)),SUM(ISNULL(agg4,0)),SUM(ISNULL(agg5,0)),SUM(ISNULL(agg6,0))
