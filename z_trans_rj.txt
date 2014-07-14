@@ -22,9 +22,14 @@ z_trans_rj06:--z_trans_rj06
 		mount4 float
 	)		
 	insert into @tmpa
-	select a.trandate,b.product,sum(isnull(a.inmount,0)),sum(isnull(a.mount3,0)),sum(isnull(a.mount4,0))
+	select a.trandate,b.product
+		,sum(isnull(a.inmount,0))
+		,sum(case when isnull(d.commission,0)!=0 and isnull(a.mount3,0)=0 then  round(isnull(a.mount4,0)/isnull(d.commission,0),3) else isnull(a.mount3,0) end)
+		,sum(isnull( a.mount4,0))
 	from view_trans a
 	left join ucc b on a.uccno=b.noa
+	left join addr c on a.straddrno=c.straddrno and a.endaddrno = c.endaddrno and a.uccno=c.productno
+	outer apply(select top 1 isnull(commission,0) commission from addrs where c.noa=noa and datea<=a.trandate order by datea) d
 	where a.endaddr='國順'
 	and left(a.trandate,6) = @t_mon
 	and (b.product='大陸砂' or b.product='粗砂' or b.product='一分石' or b.product='二分石' or b.product='成品')
