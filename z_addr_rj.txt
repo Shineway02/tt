@@ -30,14 +30,14 @@ z_addr_rj01:--z_addr_rj01
 		driverunit nvarchar(20),
 		driverprice float,
 		driverunit2 nvarchar(20),
-		driverprice2 float
-	
+		driverprice2 float,
+		commission decimal(10,3)
 	)
 	insert into @tmp(recno,gno,noa,straddrno,straddr,endaddrno,endaddr,productno,product,custno,cust,nick
-		,datea,custunit,custprice,driverunit,driverprice,driverunit2,driverprice2)
+		,datea,custunit,custprice,driverunit,driverprice,driverunit2,driverprice2,commission)
 	select ROW_NUMBER()over(order by a.straddrno,a.endaddrno,a.productno),'1'
 		,a.noa,a.straddrno,a.straddr,a.endaddrno,a.endaddr,a.productno,a.product,a.custno,a.cust,a.nick
-		,b.datea,b.custunit,b.custprice,b.driverunit,b.driverprice,b.driverunit2,b.driverprice2
+		,b.datea,b.custunit,b.custprice,b.driverunit,b.driverprice,b.driverunit2,b.driverprice2,b.commission
 	from addr a
 	outer apply (select top 1 * from addrs where a.noa=noa order by isnull(datea,'') desc) b
 	where isnull(a.straddrno,'') between @t_bstraddrno and @t_estraddrno
@@ -60,5 +60,6 @@ z_addr_rj01:--z_addr_rj01
 	,case isnull(driverprice2,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,driverprice2),1)),4,12)) end a09
 	,driverunit a10
 	,case isnull(driverprice,0) when 0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,driverprice),1)),4,12)) end a11
+	,case isnull(commission,0) when 0 then '' else cast(commission as nvarchar) end a12
 	from @tmp
 	order by rr;

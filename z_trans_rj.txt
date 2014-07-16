@@ -239,6 +239,7 @@ z_trans_rj05:--z_trans_rj05
 	and (isnull(a.uccno,'') between @t_bproductno and @t_eproductno)
 	--客戶單價
 	update @tmp set unit = c.custunit,price=c.custprice
+		,mount3=case when ISNULL(c.commission,0)=0 or ISNULL(a.mount3,0)!=0 then a.mount3 else ROUND(isnull(a.mount4,0)/ISNULL(c.commission,0),3) end
 	from @tmp a
 	left join addr b on a.straddrno=b.straddrno and a.endaddrno=b.endaddrno and a.productno=b.productno
 	outer apply(select top 1 * from addrs where noa=b.noa order by datea desc) c
