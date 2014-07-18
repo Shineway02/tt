@@ -1,3 +1,38 @@
+z_trans_rj07:--z_trans_rj07
+	declare @t_btrandate nvarchar(10) = case when '#non'=[3] then '' else [3] end
+	declare @t_etrandate nvarchar(10) = case when '#non'=[4] then char(255) else [4] end
+	declare @t_carno nvarchar(max) = case when '#non'=[11] then '' else [11] end
+	-----------------------------------------------------------------
+	declare @tmp table(
+		gno nvarchar(10),
+		trandate nvarchar(20),
+		carno nvarchar(20),
+		tolls float,
+		reserve float
+	)
+	insert into @tmp(gno,trandate,carno,tolls,reserve)
+	select '1',trandate,carno,SUM(ISNULL(a.tolls,0)),SUM(ISNULL(a.reserve,0)) 
+	from view_trans a
+	where not(ISNULL(a.tolls,0)=0 and ISNULL(a.reserve,0)=0)
+	and trandate between @t_btrandate and @t_etrandate
+	and (len(@t_carno)=0 or CHARINDEX(','+a.carno+',',','+@t_carno+',')>0)
+	group by trandate,carno
+	order by carno,trandate
+	
+	insert into @tmp(gno,trandate,carno,tolls,reserve)
+	select '2',CHAR(255),carno,SUM(tolls),SUM(reserve)
+	from @tmp where gno='1' group by carno
+	
+	insert into @tmp(gno,trandate,carno,tolls,reserve)
+	select '3',CHAR(255),CHAR(255),SUM(tolls),SUM(reserve)
+	from @tmp where gno='1'
+	
+	select *
+		,dbo.getComma(tolls,3) a01 
+		,dbo.getComma(reserve,0) a02
+	from @tmp 
+	order by carno,trandate;
+	
 z_trans_rj06:--z_trans_rj06
 	declare @t_mon nvarchar(20) = case when '#non'=[15] then '' else [15] end
 	-------------------------------------------------------------------------------
@@ -159,7 +194,7 @@ z_trans_rj06:--z_trans_rj06
 		,SUM(ISNULL(bb1,0)),SUM(ISNULL(bb2,0)),SUM(ISNULL(bb3,0))
 	from @tmp
 	select * from @tmp order by pno;
-
+	
 z_trans_rj05:--z_trans_rj05
 	SET QUOTED_IDENTIFIER OFF
 	declare @t_bdate nvarchar(10) = case when '#non'=[1] then '' else [1] end
