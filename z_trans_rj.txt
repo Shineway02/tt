@@ -292,6 +292,8 @@ z_trans_rj05:--z_trans_rj05
 		,mount2 = case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
 		,money2 = ROUND( case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price2,0)
 
+	update @tmp set mount4 = ROUND(ISNULL(mount4,0),2)
+	
 	insert into @tmp(gno,inmount,mount3,mount4,mount,mount2,[money],money2,tolls,reserve)
 	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) 
 		,SUM(ISNULL(mount2,0)) ,SUM(ISNULL(mount3,0)),SUM(ISNULL([money],0)),SUM(ISNULL([money2],0)),SUM(ISNULL([tolls],0)),SUM(ISNULL([reserve],0))    
@@ -310,7 +312,7 @@ z_trans_rj05:--z_trans_rj05
 	,product a08
 	,inmount a09
 	,mount3 a10
-	,mount4 a11
+	,cast(mount4 as decimal(20,2)) a11
 	,reserve a12
 	,miles a13
 	,tolls a14
