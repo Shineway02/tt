@@ -243,12 +243,12 @@ z_trans_rj05:--z_trans_rj05
 		miles decimal(10,0),
 		
 		unit nvarchar(20),
-		price decimal(10,0),
+		price decimal(10,3),
 		mount decimal(10,3),
 		[money] decimal(10,0),
 		
 		unit2 nvarchar(20),
-		price2 decimal(10,0),
+		price2 decimal(10,3),
 		mount2 decimal(10,3),
 		money2 decimal(10,0)
 	)
@@ -318,12 +318,12 @@ z_trans_rj05:--z_trans_rj05
 	,tolls a14
 	,mount b01
 	,unit b02
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price),1)),4,12)) b03
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) b04
+	,dbo.getComma(price,3) b03
+	,dbo.getComma([money],0) b04
 	,mount2 b05
 	,unit2 b06
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price2),1)),4,12)) b07
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,money2),1)),4,12)) b08
+	,dbo.getComma(price2,3) b07
+	,dbo.getComma([money2],0) b08
 	from @tmp order by gno,recno;
 	
 z_trans_rj04:--z_trans_rj04
