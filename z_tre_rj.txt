@@ -46,13 +46,13 @@ z_tre_rj03:--z_tre_rj03
 	and driverno between @t_bdriverno and @t_edriverno
 	and (len(@t_noa)=0 or noa=@t_noa)
 	
-	insert into @tmpb(driverno,carno,datea,straddr,endaddr,product,unit,price,mount,[money])
-	select b.driverno,a.memo,a.trandate,a.straddr,a.endaddr,a.product,a.unit
+	insert into @tmpb(driverno,carno,straddr,endaddr,product,unit,price,mount,[money])
+	select b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit
 		,a.price,sum(isnull(a.mount,'0')),sum(isnull(a.[money],'0'))
 	from view_tres a
 	left join @tmpa b on a.accy=b.accy and a.noa=b.noa
 	where b.noa is not null
-	group by b.driverno,a.memo,a.trandate,a.straddr,a.endaddr,a.product,a.unit,a.price
+	group by b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit,a.price
 	
 	insert into @tmpc(driverno,datea,item,[money])
 	select a.driverno,a.datea,isnull(a.minusitem,'')+isnull(a.plusitem,''),ISNULL(a.plusmoney,0)-ISNULL(a.minusmoney,0)
@@ -79,9 +79,9 @@ z_tre_rj03:--z_tre_rj03
 		minus float,
 		total float
 	)
-	insert into @tmp (gno,driverno,driver,datea,straddr,endaddr
+	insert into @tmp (gno,driverno,datea,straddr,endaddr
 		,product,unit,price,mount,[money],carno)
-	select '1',a.driverno,a.driverno,a.datea,a.straddr,a.endaddr
+	select '1',a.driverno,a.datea,a.straddr,a.endaddr
 		,a.product,a.unit,a.price,a.mount,a.[money],a.carno
 	from @tmpb a
 	
@@ -148,6 +148,9 @@ z_tre_rj03:--z_tre_rj03
 	update @tmpz set qq = b.pp
 	from @tmpz a
 	outer apply (select MAX(pp) pp from @tmpz where driverno=a.driverno) b
+	update @tmpz set driver=b.namea
+	from @tmpz a
+	left join driver b on a.driverno=b.noa
 	
 	select gno,pp,qq,recno rr
 		,driverno ddno
@@ -166,7 +169,7 @@ z_tre_rj03:--z_tre_rj03
 		,case when [minus]<0 then '('+ dbo.getComma(abs([minus]),0)+')' else dbo.getComma([minus],0) end c02
 		,case when [total]<0 then '('+ dbo.getComma(abs([total]),0)+')' else dbo.getComma([total],0) end c03
 	from @tmpz
-	order by driverno,gno,datea,carno,straddr,endaddr;
+	order by driverno,gno,carno,straddr,endaddr;
 
 z_tre_rj02:--z_tre_rj02 依司機
 	declare @t_bdate nvarchar(20) = case when '#non'=[1] then '' else [1] end
