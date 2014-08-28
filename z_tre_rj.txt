@@ -35,7 +35,9 @@ z_tre_rj03:--z_tre_rj03
 		driverno nvarchar(20),
 		datea nvarchar(20),
 		item nvarchar(max),
-		[money] float
+		[money] float,
+		plus float,
+		minus float
 	)
 	
 	insert into @tmpa(accy,noa,driverno,[money],plusmoney,minusmoney,total)
@@ -54,11 +56,55 @@ z_tre_rj03:--z_tre_rj03
 	where b.noa is not null
 	group by b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit,a.price
 	
-	insert into @tmpc(driverno,datea,item,[money])
-	select a.driverno,a.datea,isnull(a.minusitem,'')+isnull(a.plusitem,''),ISNULL(a.plusmoney,0)-ISNULL(a.minusmoney,0)
+	insert into @tmpc(driverno,datea,item,[money],plus,minus)
+	select a.driverno,a.datea,isnull(a.minusitem,'')+isnull(a.plusitem,''),ISNULL(a.plusmoney,0)-ISNULL(a.minusmoney,0),ISNULL(a.plusmoney,0),ISNULL(a.minusmoney,0)
 	from carchg a
 	left join @tmpa b on a.treno=b.noa
 	where b.noa is not null
+	-------------------------------------------------------------------------
+	declare @driverno nvarchar(20)
+	declare @driver nvarchar(20)
+	declare @sssno nvarchar(20)
+	declare @mon nvarchar(10) = ''
+	select top 1 @mon=left(b.trandate,6) from @tmpa a
+	outer apply(select trandate from view_tres where accy=a.accy and noa=a.noa) b
+	where len(isnull(b.trandate,''))>0
+	--he_person 健保
+	--la_person 勞保
+	--re_person 所得稅
+	declare cursor_table cursor for
+	select a.driverno,b.namea 
+	from @tmpa a 
+	left join driver b on a.driverno=b.noa 
+	group by a.driverno,b.namea 
+    open cursor_table
+    fetch next from cursor_table
+    into @driverno,@driver
+    while(@@FETCH_STATUS <> -1)
+    begin
+		set @sssno = ''
+		select top 1 @sssno = noa from sss where namea=@driver
+		
+        insert into @tmpc(driverno,datea,item,[money],minus)
+        select @driverno,@mon,'健保',-he_person,he_person
+        from salinsures a
+        where mon=@mon and noa=@sssno and ISNULL(he_person,0)!=0
+        
+        insert into @tmpc(driverno,datea,item,[money],minus)
+        select @driverno,@mon,'勞保',-la_person,la_person
+        from salinsures a
+        where mon=@mon and noa=@sssno and ISNULL(la_person,0)!=0
+        
+        insert into @tmpc(driverno,datea,item,[money],minus)
+        select @driverno,@mon,'所得稅',-re_person,re_person
+        from salinsures a
+        where mon=@mon and noa=@sssno and ISNULL(re_person,0)!=0
+        
+        fetch next from cursor_table
+        into @driverno,@driver
+    end
+    close cursor_table
+    deallocate cursor_table
 	-------------------------------------------------------------------------
 	declare @tmp table(
 		gno nvarchar(20),
@@ -100,12 +146,15 @@ z_tre_rj03:--z_tre_rj03
 		,SUM(case unit when '米數' then ISNULL([mount],0) else 0 end)
 	from @tmpb group by driverno
 	
-	insert into @tmp(gno,driverno,[money],plus,minus,total)
-	select '5',driverno,SUM(ISNULL([money],0)),SUM(ISNULL([plusmoney],0)),SUM(ISNULL([minusmoney],0)),SUM(ISNULL([total],0))
-	from @tmpa group by driverno
+	insert into @tmp(gno,driverno,[money],plus,minus)
+	select '5',a.driverno,SUM(ISNULL(b.[money],0)),SUM(ISNULL(c.[plus],0)),SUM(ISNULL(c.[minus],0))
+	from @tmpa a 
+	left join (select driverno,SUM(isnull([money],0)) [money] from @tmpb group by driverno) b on a.driverno=b.driverno
+	left join (select driverno,SUM(isnull([plus],0)) [plus],SUM(isnull([minus],0)) [minus] from @tmpc group by driverno) c on a.driverno=c.driverno
+	group by a.driverno
+	update @tmp set total = [money]+plus-minus where gno='5'
 	------------------------------------------------------------------------------
 	declare @pageCount int = 40 -- 一頁幾行
-	declare @driverno nvarchar(20)
 	declare @n int
 	
 	declare cursor_table cursor for
