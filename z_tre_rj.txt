@@ -29,7 +29,10 @@ z_tre_rj03:--z_tre_rj03
 		price float,
 		mount float,
 		[money] float,
-		carno nvarchar(20)
+		carno nvarchar(20),
+		mount1 float,--台數
+		mount2 float,--噸數
+		mount3 float--米數
 	)
 	declare @tmpc table(
 		driverno nvarchar(20),
@@ -48,11 +51,14 @@ z_tre_rj03:--z_tre_rj03
 	and driverno between @t_bdriverno and @t_edriverno
 	and (len(@t_noa)=0 or noa=@t_noa)
 	
-	insert into @tmpb(driverno,carno,straddr,endaddr,product,unit,price,mount,[money])
+	insert into @tmpb(driverno,carno,straddr,endaddr,product,unit,price,mount,[money]
+		,mount1,mount2,mount3)
 	select b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit
 		,a.price,sum(isnull(a.mount,'0')),sum(isnull(a.[money],'0'))
+		,sum(isnull(c.inmount,'0')),sum(isnull(c.mount4,'0')),sum(isnull(c.mount3,'0'))
 	from view_tres a
 	left join @tmpa b on a.accy=b.accy and a.noa=b.noa
+	left join view_trans c on a.tranaccy=c.accy and a.tranno=c.noa and a.trannoq=c.noq
 	where b.noa is not null
 	group by b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit,a.price
 	
@@ -140,10 +146,7 @@ z_tre_rj03:--z_tre_rj03
 	from @tmpc a
 	------------------------------------------------------------------------------
 	insert into @tmp(gno,driverno,mount1,mount2,mount3)
-	select '4',driverno
-		,SUM(case unit when '台數' then ISNULL([mount],0) else 0 end)
-		,SUM(case unit when '噸數' then ISNULL([mount],0) else 0 end)
-		,SUM(case unit when '米數' then ISNULL([mount],0) else 0 end)
+	select '4',driverno,SUM(mount1),SUM(mount2),SUM(mount3)
 	from @tmpb group by driverno
 	
 	insert into @tmp(gno,driverno,[money],plus,minus)
