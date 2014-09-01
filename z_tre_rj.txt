@@ -1,3 +1,230 @@
+z_tre_rj04:--z_tre_rj04
+	SET QUOTED_IDENTIFIER OFF
+	declare @t_bdate nvarchar(20) = case when '#non'=[1] then '' else [1] end
+    declare @t_edate nvarchar(20) = case when '#non'=[2] then char(255) else [2] end
+	declare @t_btggno nvarchar(20) = case when '#non'=[3] then '' else [3] end
+	declare @t_etggno nvarchar(20) = case when '#non'=[4] then char(255) else [4] end
+	declare @t_bdriverno nvarchar(20) = case when '#non'=[5] then '' else [5] end
+	declare @t_edriverno nvarchar(20) = case when '#non'=[6] then char(255) else [6] end
+	declare @t_noa nvarchar(max) = case when '#non'=[7] then '' else [7] end
+	----------------------------------------------------------------------------------------------
+	declare @tmpa table(
+		accy nvarchar(10),
+		noa nvarchar(20),
+		driverno nvarchar(20),
+		[money] float,
+		plusmoney float,
+		minusmoney float,
+		total float
+	)
+	insert into @tmpa(accy,noa,driverno,[money],plusmoney,minusmoney,total)
+	select accy,noa,driverno,[money],plusmoney,minusmoney,total
+	from view_tre
+	where datea between @t_bdate and @t_edate
+	and tggno between @t_btggno and @t_etggno
+	and driverno between @t_bdriverno and @t_edriverno
+	and (len(@t_noa)=0 or noa=@t_noa)
+	
+	declare @tmpb table(
+		driverno nvarchar(20),
+		datea nvarchar(20),
+		itemno nvarchar(max),
+		item nvarchar(max),
+		plus float,
+		minus float
+	)
+	insert into @tmpb(driverno,datea,itemno,item,plus,minus)
+	select a.driverno,a.datea
+		,isnull(a.minusitemno,'')+isnull(a.plusitemno,'')
+		,isnull(a.minusitem,'')+isnull(a.plusitem,'')
+		,ISNULL(a.plusmoney,0),ISNULL(a.minusmoney,0)
+	from carchg a
+	left join @tmpa b on a.treno=b.noa
+	where b.noa is not null
+	
+	-------------------------------------------------------------------------
+	declare @driverno nvarchar(20)
+	declare @driver nvarchar(20)
+	declare @sssno nvarchar(20)
+	declare @mon nvarchar(10) = ''
+	select top 1 @mon=left(b.trandate,6) from @tmpa a
+	outer apply(select trandate from view_tres where accy=a.accy and noa=a.noa) b
+	where len(isnull(b.trandate,''))>0
+	if LEN(ISNULL(@mon,''))=0
+	begin
+		select top 1 @mon=left(datea,6) from @tmpb where len(ISNULL(datea,''))>0 order by datea desc
+	end
+	
+	--he_person 健保
+	--la_person 勞保
+	--re_person 所得稅
+	declare cursor_table cursor for
+	select a.driverno,b.namea 
+	from @tmpa a 
+	left join driver b on a.driverno=b.noa 
+	group by a.driverno,b.namea 
+    open cursor_table
+    fetch next from cursor_table
+    into @driverno,@driver
+    while(@@FETCH_STATUS <> -1)
+    begin
+		set @sssno = ''
+		select top 1 @sssno = noa from sss where namea=@driver
+		
+        insert into @tmpb(driverno,datea,itemno,item,plus,minus)
+        select @driverno,@mon,'','健保',0,he_person
+        from salinsures a
+        where mon=@mon and noa=@sssno and ISNULL(he_person,0)!=0
+        
+        insert into @tmpb(driverno,datea,itemno,item,plus,minus)
+        select @driverno,@mon,'','勞保',0,la_person
+        from salinsures a
+        where mon=@mon and noa=@sssno and ISNULL(la_person,0)!=0
+        
+        insert into @tmpb(driverno,datea,itemno,item,plus,minus)
+        select @driverno,@mon,'','所得稅',0,re_person
+        from salinsures a
+        where mon=@mon and noa=@sssno and ISNULL(re_person,0)!=0
+        
+        fetch next from cursor_table
+        into @driverno,@driver
+    end
+    close cursor_table
+    deallocate cursor_table
+	-------------------------------------------------------------------------
+	--select * from @tmpa
+	--select * from @tmpb
+	
+	declare @tmp table(
+		gno nvarchar(10),
+		recno int,
+		carno nvarchar(20),
+		driverno nvarchar(20),
+		driver nvarchar(20),
+		[money] float,
+		bonus float,
+		plus float,
+		minus float,
+		total float,
+		borr float
+	)
+	
+	insert into @tmp(driverno,[money])
+	select driverno,SUM(ISNULL([money],0)) from @tmpa group by driverno
+	-----------------------------------------------------------------------
+	declare @itemno nvarchar(20)
+	declare @item nvarchar(40)
+	declare @plus float
+	declare @minus float
+	
+	declare cursor_table cursor for
+	select driverno,itemno,item,plus,minus from @tmpb
+    open cursor_table
+    fetch next from cursor_table
+    into @driverno,@itemno,@item,@plus,@minus
+    while(@@FETCH_STATUS <> -1)
+    begin
+        if charindex('全薪',@item)>0
+        begin
+			if exists (select * from @tmp where driverno=@driverno)
+				update @tmp set [money] = isnull([money],0)+@plus-@minus where driverno=@driverno
+			else
+			begin
+				insert into @tmp(driverno,[money])values(@driverno,@plus-@minus)
+			end
+        end
+        else if charindex('獎金',@item)>0
+        begin
+			if exists (select * from @tmp where driverno=@driverno)
+				update @tmp set [bonus] = isnull([bonus],0)+@plus-@minus where driverno=@driverno
+			else
+			begin
+				insert into @tmp(driverno,[money])values(@driverno,@plus-@minus)
+			end
+        end 
+        else if charindex('預支',@item)>0 or charindex('借支',@item)>0
+        begin
+			if exists (select * from @tmp where driverno=@driverno)
+				update @tmp set [borr] = isnull([borr],0)+@minus-@plus where driverno=@driverno
+			else
+			begin
+				insert into @tmp(driverno,[borr])values(@driverno,@minus-@plus)
+			end
+        end 
+        else if ISNULL(@plus,0)>0
+        begin
+			if exists (select * from @tmp where driverno=@driverno)
+				update @tmp set [plus] = isnull([plus],0)+@plus where driverno=@driverno
+			else
+			begin
+				insert into @tmp(driverno,[plus])values(@driverno,@plus)
+			end
+        end
+        else if ISNULL(@minus,0)>0
+        begin
+			if exists (select * from @tmp where driverno=@driverno)
+				update @tmp set [minus] = isnull([minus],0)+@minus where driverno=@driverno
+			else
+			begin
+				insert into @tmp(driverno,[minus])values(@driverno,@minus)
+			end
+        end
+        
+        fetch next from cursor_table
+        into @driverno,@itemno,@item,@plus,@minus
+    end
+    close cursor_table
+    deallocate cursor_table
+    -------------------------------------------------------------------------------------
+    update @tmp set carno=b.carno
+    from @tmp a
+    left join (select a.driverno,b.memo carno from @tmpa a left join view_tres b on a.accy=b.accy and a.noa=b.noa where len(isnull(b.memo,''))>0)b on a.driverno=b.driverno
+    
+    update @tmp set driver=b.namea
+    from @tmp a
+    left join driver b on a.driverno=b.noa
+    
+    update @tmp set total = ISNULL([money],0) + ISNULL([bonus],0) + ISNULL([plus],0) - ISNULL([minus],0)
+    update @tmp set gno = case when len(ISNULL(b.account,''))>0 or len(ISNULL(b.account2,''))>0 then '1' else '2' end
+    from @tmp a
+    left join driver b on a.driverno=b.noa
+    update @tmp set recno=b.recno
+    from @tmp a
+    left join (select driverno,ROW_NUMBER()over(PARTITION by gno order by driverno) recno from @tmp ) b on a.driverno=b.driverno
+    
+    -------------------------------------------------------------------------------------
+    if exists(select * from @tmp where gno='1')
+    begin
+		insert into @tmp(gno,[money],bonus,plus,minus,total,borr)
+		select '3',SUM(ISNULL([money],0)),SUM(ISNULL([bonus],0)),SUM(ISNULL([plus],0)),SUM(ISNULL([minus],0)),SUM(ISNULL([total],0)),SUM(ISNULL([borr],0))
+		from @tmp where gno='1'
+    end
+		
+    if exists(select * from @tmp where gno='2')
+    begin
+		insert into @tmp(gno,[money],bonus,plus,minus,total,borr)
+		select '4',SUM(ISNULL([money],0)),SUM(ISNULL([bonus],0)),SUM(ISNULL([plus],0)),SUM(ISNULL([minus],0)),SUM(ISNULL([total],0)),SUM(ISNULL([borr],0))
+		from @tmp where gno='2'
+    end
+    
+    insert into @tmp(gno,[money],bonus,plus,minus,total,borr)
+	select '5',SUM(ISNULL([money],0)),SUM(ISNULL([bonus],0)),SUM(ISNULL([plus],0)),SUM(ISNULL([minus],0)),SUM(ISNULL([total],0)),SUM(ISNULL([borr],0))
+	from @tmp where gno='1' or gno='2'
+    
+    select recno rr 
+		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+isnull(@mon,'')+' 薪資'+'</a>' a00
+		,carno a01
+		,driverno a02
+		,driver a03 
+		,dbo.getComma([money],0) a04
+		,dbo.getComma(bonus,0) a05
+		,dbo.getComma(plus,0) a06
+		,dbo.getComma(minus,0) a07
+		,dbo.getComma(total,0) a08
+		,dbo.getComma(borr,0) a09
+		,*
+    from @tmp
+    order by gno,recno;
 
 z_tre_rj03:--z_tre_rj03
 	SET QUOTED_IDENTIFIER OFF
