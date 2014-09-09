@@ -15,10 +15,11 @@ z_tre_rj04:--z_tre_rj04
 		[money] float,
 		plusmoney float,
 		minusmoney float,
-		total float
+		total float,
+		carchgno nvarchar(max)
 	)
-	insert into @tmpa(accy,noa,driverno,[money],plusmoney,minusmoney,total)
-	select accy,noa,driverno,[money],plusmoney,minusmoney,total
+	insert into @tmpa(accy,noa,driverno,[money],plusmoney,minusmoney,total,carchgno)
+	select accy,noa,driverno,[money],plusmoney,minusmoney,total,carchgno
 	from view_tre
 	where datea between @t_bdate and @t_edate
 	and tggno between @t_btggno and @t_etggno
@@ -39,7 +40,7 @@ z_tre_rj04:--z_tre_rj04
 		,isnull(a.minusitem,'')+isnull(a.plusitem,'')
 		,ISNULL(a.plusmoney,0),ISNULL(a.minusmoney,0)
 	from carchg a
-	left join @tmpa b on a.treno=b.noa
+	left join @tmpa b on charindex(a.noa,b.carchgno)>0
 	where b.noa is not null
 	
 	-------------------------------------------------------------------------
@@ -243,7 +244,8 @@ z_tre_rj03:--z_tre_rj03
 		[money] float,
 		plusmoney float,
 		minusmoney float,
-		total float
+		total float,
+		carchgno nvarchar(max)
 	)
 	
 	declare @tmpb table(
@@ -270,8 +272,8 @@ z_tre_rj03:--z_tre_rj03
 		minus float
 	)
 	
-	insert into @tmpa(accy,noa,driverno,[money],plusmoney,minusmoney,total)
-	select accy,noa,driverno,[money],plusmoney,minusmoney,total
+	insert into @tmpa(accy,noa,driverno,[money],plusmoney,minusmoney,total,carchgno)
+	select accy,noa,driverno,[money],plusmoney,minusmoney,total,carchgno
 	from view_tre
 	where datea between @t_bdate and @t_edate
 	and tggno between @t_btggno and @t_etggno
@@ -292,7 +294,7 @@ z_tre_rj03:--z_tre_rj03
 	insert into @tmpc(driverno,datea,item,[money],plus,minus)
 	select a.driverno,a.datea,isnull(a.minusitem,'')+isnull(a.plusitem,''),ISNULL(a.plusmoney,0)-ISNULL(a.minusmoney,0),ISNULL(a.plusmoney,0),ISNULL(a.minusmoney,0)
 	from carchg a
-	left join @tmpa b on a.treno=b.noa
+	left join @tmpa b on charindex(a.noa,b.carchgno)>0
 	where b.noa is not null
 	-------------------------------------------------------------------------
 	declare @driverno nvarchar(20)
