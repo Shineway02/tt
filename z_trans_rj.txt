@@ -224,6 +224,9 @@ z_trans_rj05:--z_trans_rj05
 		custno nvarchar(20),
 		cust nvarchar(50),
 		nick nvarchar(20),
+		tggno nvarchar(20),
+		tgg nvarchar(50),
+		
 		carno nvarchar(20),
 		driverno nvarchar(20),
 		driver nvarchar(20),
@@ -250,7 +253,12 @@ z_trans_rj05:--z_trans_rj05
 		unit2 nvarchar(20),
 		price2 decimal(10,3),
 		mount2 decimal(10,3),
-		money2 decimal(10,0)
+		money2 decimal(10,0),
+		
+		tggunit nvarchar(20),
+		tggprice decimal(10,3),
+		tggmount decimal(10,3),
+		tggmoney decimal(10,0)
 	)
 	
 	insert into @tmp(gno,recno,accy,noa,noq,datea,trandate,custno,cust,nick,carno,driverno,driver
@@ -272,13 +280,14 @@ z_trans_rj05:--z_trans_rj05
 	and (len(@t_straddrno)=0 or a.straddrno=@t_straddrno)
 	and (len(@t_endaddrno)=0 or a.endaddrno=@t_endaddrno)
 	and (isnull(a.uccno,'') between @t_bproductno and @t_eproductno)
-	--客戶單價
-	update @tmp set unit = c.custunit,price=c.custprice
+
+	--客戶單價、廠商單價
+	update @tmp set unit = c.custunit,price=c.custprice,tggunit = c.tggunit,tggprice=c.tggprice
 		,mount3=case when ISNULL(c.commission,0)=0 or ISNULL(a.mount3,0)!=0 then a.mount3 else ROUND(isnull(a.mount4,0)/ISNULL(c.commission,0),2) end
 	from @tmp a
 	left join addr b on a.straddrno=b.straddrno and a.endaddrno=b.endaddrno and a.productno=b.productno
 	outer apply(select top 1 * from addrs where noa=b.noa order by datea desc) c
-	
+
 	--司機單價
 	update @tmp set unit2=case ISNULL(d.cartype,'') when '2' then c.driverunit else c.driverunit2 end
 		,price2 =case ISNULL(d.cartype,'') when '2' then c.driverprice else c.driverprice2 end
@@ -288,15 +297,18 @@ z_trans_rj05:--z_trans_rj05
 	left join car2 d on a.carno=d.carno 
 	
 	update @tmp set mount = case unit when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
-		,[money] = ROUND( case unit when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price,0)
+		,[money] = ROUND( case unit when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price*case when len(custno)>0 then 1 else 0 end,0)
 		,mount2 = case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end
 		,money2 = ROUND( case unit2 when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*price2,0)
-
+		,tggmoney = ROUND( case tggunit when '台數' then inmount when '米數' then mount3 when '噸數' then mount4 end*tggprice*case when len(tggno)>0 then 1 else 0 end,0)
+		
 	update @tmp set mount3 = ROUND(ISNULL(mount3,0),2),mount4 = ROUND(ISNULL(mount4,0),2)
 	
-	insert into @tmp(gno,inmount,mount3,mount4,mount,mount2,[money],money2,tolls,reserve)
+	insert into @tmp(gno,inmount,mount3,mount4,mount,mount2,[money],tggmoney,money2,tolls,reserve)
 	select '2',SUM(ISNULL(inmount,0)),SUM(ISNULL(mount3,0)),SUM(ISNULL(mount4,0)) 
-		,SUM(ISNULL(mount2,0)) ,SUM(ISNULL(mount3,0)),SUM(ISNULL([money],0)),SUM(ISNULL([money2],0)),SUM(ISNULL([tolls],0)),SUM(ISNULL([reserve],0))    
+		,SUM(ISNULL(mount2,0)) ,SUM(ISNULL(mount3,0))
+		,SUM(ISNULL([money],0)),SUM(ISNULL([tggmoney],0))
+		,SUM(ISNULL([money2],0)),SUM(ISNULL([tolls],0)),SUM(ISNULL([reserve],0))    
 	from @tmp
 	
 	select  "trans_rj?noa=\'"+noa+"\' and "+cast(recno as nvarchar)+"=$rr?"+accy ghref 
@@ -319,11 +331,14 @@ z_trans_rj05:--z_trans_rj05
 	,mount b01
 	,unit b02
 	,dbo.getComma(price,3) b03
-	,dbo.getComma([money],0) b04
+	--,dbo.getComma([money],0) b04
 	,mount2 b05
 	,unit2 b06
 	,dbo.getComma(price2,3) b07
 	,dbo.getComma([money2],0) b08
+	
+	,dbo.getComma([money],0) c01
+	,dbo.getComma([tggmoney],0) c02
 	from @tmp order by gno,recno;
 	
 z_trans_rj04:--z_trans_rj04
