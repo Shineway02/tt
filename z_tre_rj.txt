@@ -256,7 +256,6 @@ z_tre_rj03:--z_tre_rj03
 		product nvarchar(20),
 		unit nvarchar(20),
 		price float,
-		mount float,
 		[money] float,
 		carno nvarchar(20),
 		mount1 float,--台數
@@ -280,14 +279,14 @@ z_tre_rj03:--z_tre_rj03
 	and driverno between @t_bdriverno and @t_edriverno
 	and (len(@t_noa)=0 or noa=@t_noa)
 	
-	insert into @tmpb(driverno,carno,straddr,endaddr,product,unit,price,mount,[money]
+	insert into @tmpb(driverno,carno,straddr,endaddr,product,unit,price
+		,[money]
 		,mount1,mount2,mount3)
 	select b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit
-		,a.price,sum(isnull(a.mount,'0')),sum(isnull(a.[money],'0'))
-		,sum(isnull(c.inmount,'0')),sum(isnull(c.mount4,'0')),sum(isnull(c.mount3,'0'))
+		,a.price,sum(ISNULL(a.[money],0))
+		,sum(isnull(a.mount,0)),sum(isnull(a.overweightcost,0)),sum(isnull(a.othercost,0))
 	from view_tres a
 	left join @tmpa b on a.accy=b.accy and a.noa=b.noa
-	left join view_trans c on a.tranaccy=c.accy and a.tranno=c.noa and a.trannoq=c.noq
 	where b.noa is not null
 	group by b.driverno,a.memo,a.straddr,a.endaddr,a.product,a.unit,a.price
 	
@@ -351,7 +350,6 @@ z_tre_rj03:--z_tre_rj03
 		product nvarchar(20),
 		unit nvarchar(20),
 		price float,
-		mount float,
 		[money] float,
 		carno nvarchar(20),
 		
@@ -365,9 +363,9 @@ z_tre_rj03:--z_tre_rj03
 		mount3 float--米數
 	)
 	insert into @tmp (gno,driverno,datea,straddr,endaddr
-		,product,unit,price,mount,[money],carno)
+		,product,unit,price,mount1,mount2,mount3,[money],carno)
 	select '1',a.driverno,a.datea,a.straddr,a.endaddr
-		,a.product,a.unit,a.price,a.mount,a.[money],a.carno
+		,a.product,a.unit,a.price,a.mount1,a.mount2,a.mount3,a.[money],a.carno
 	from @tmpb a
 	
 	insert into @tmp(gno,driverno,datea,item,[money])
@@ -431,11 +429,11 @@ z_tre_rj03:--z_tre_rj03
 		mount2 float,
 		mount3 float
 	)
-	insert into @tmpz(gno,recno,driverno,driver,datea,straddr,endaddr,product,unit,price,mount,[money]
+	insert into @tmpz(gno,recno,driverno,driver,datea,straddr,endaddr,product,unit,price,[money]
 		,carno,item,plus,minus,total,mount1,mount2,mount3)
 	select gno
 		,ROW_NUMBER()over(partition by driverno order by gno,datea,carno,straddr,endaddr) recno
-		,driverno,driver,datea,straddr,endaddr,product,unit,price,mount,[money]
+		,driverno,driver,datea,straddr,endaddr,product,unit,price,[money]
 		,carno,item,plus,minus,total,mount1,mount2,mount3
 	from @tmp 
 	----------------------------------------------------------------------------------------
@@ -454,11 +452,13 @@ z_tre_rj03:--z_tre_rj03
 		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+straddr+'</a>' a02
 		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+endaddr+'</a>' a03
 		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+product+'</a>' a04
-		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+unit+'</a>' a05
-		,dbo.getComma(mount,3) a06
-		,dbo.getComma(price,3) a07
-		,case when [money]<0 then '('+ dbo.getComma(abs([money]),0)+')' else dbo.getComma([money],0) end a08
-		,carno a09
+		,dbo.getComma(mount1,0) a05
+		,dbo.getComma(mount2,2) a06
+		,dbo.getComma(mount3,2) a07
+		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+unit+'</a>' a08
+		,dbo.getComma(price,3) a09
+		,case when [money]<0 then '('+ dbo.getComma(abs([money]),0)+')' else dbo.getComma([money],0) end a10
+		,carno a11
 		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+item+'</a>' b01
 		,case when [plus]<0 then '('+ dbo.getComma(abs([plus]),0)+')' else dbo.getComma([plus],0) end c01
 		,case when [minus]<0 then '('+ dbo.getComma(abs([minus]),0)+')' else dbo.getComma([minus],0) end c02
